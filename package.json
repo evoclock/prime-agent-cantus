@@ -1,0 +1,22 @@
+{
+	"name": "prime-agent-cantus",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "Governed launch profiles for Prime Agent: supervised (pa) and full RLM (pa-auto).",
+	"keywords": ["pi-package"],
+	"license": "MIT",
+	"bin": {
+		"pa": "./bin/pa",
+		"pa-auto": "./bin/pa-auto"
+	},
+	"pi": {
+		"extensions": ["./extensions"]
+	},
+	"scripts": {
+		"test": "node --test 'test/*.test.js'"
+	},
+	"engines": {
+		"node": ">=22.8.0"
+	}
+}

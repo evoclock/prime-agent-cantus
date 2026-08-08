@@ -1,0 +1,6 @@
+node_modules/
+.DS_Store
+*.log
+
+# Machine-specific model configuration.
+models.json

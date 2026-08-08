@@ -1,0 +1,3 @@
+# Test command for the pre-commit gate.
+# Node's built-in runner expands the glob itself, so no shell is needed.
+node --test test/*.test.js

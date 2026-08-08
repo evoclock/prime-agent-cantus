@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+#
+# Supervised profile.
+#
+# This is plain Prime Agent with the checkpoint gate loaded. Nothing is
+# restricted. A human is present, so the gate asks instead of refusing, and
+# recursion keeps the upstream default. Drive this the way you would drive
+# `prime-agent` itself.
+
+set -euo pipefail
+
+CANTUS_DIR="${CANTUS_DIR:-$HOME/prime-agent-cantus}"
+GATE="$CANTUS_DIR/extensions/checkpoint-gate.js"
+
+if [[ ! -f "$GATE" ]]; then
+	echo "pa: the gate is missing at $GATE" >&2
+	echo "pa: set CANTUS_DIR to the prime-agent-cantus checkout" >&2
+	exit 66
+fi
+
+for arg in "$@"; do
+	case "$arg" in
+	--no-extensions | -ne)
+		echo "pa: $arg would unload the checkpoint gate. Refused." >&2
+		echo "pa: run 'prime-agent' directly if you want an ungoverned session." >&2
+		exit 64
+		;;
+	# A non-interactive mode has no one to answer a checkpoint, so the gate must
+	# deny rather than ask. The harness's own ctx.hasUI was observed true in a
+	# --print run and stdin can still be a terminal, so neither is a reliable
+	# signal. The flags are, and this launcher can see them.
+	-p | --print | --mode)
+		export CANTUS_UNATTENDED=1
+		;;
+	esac
+done
+
+exec prime-agent -e "$GATE" "$@"

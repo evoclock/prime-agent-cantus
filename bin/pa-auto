@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+#
+# Unattended profile: the full RLM mode.
+#
+# Same harness, same extensions, same skills as `pa`. The agent drives itself:
+# Prime Agent adds bounded continuations behind a quality gate, and recursion
+# stays enabled so the agent can delegate to child sessions.
+#
+# Known limit. The checkpoint gate does not reach inline RLM child sessions, so
+# a child can run ungoverned. Daemon-backed children do load extensions. Confirm
+# which path your setup takes before you trust the gate at depth. Until then the
+# containment boundary for child writes is outside the harness: git hooks and
+# filesystem permissions.
+
+set -euo pipefail
+
+CANTUS_DIR="${CANTUS_DIR:-$HOME/prime-agent-cantus}"
+GATE="$CANTUS_DIR/extensions/checkpoint-gate.js"
+
+if [[ ! -f "$GATE" ]]; then
+	echo "pa-auto: the gate is missing at $GATE" >&2
+	echo "pa-auto: set CANTUS_DIR to the prime-agent-cantus checkout" >&2
+	exit 66
+fi
+
+for arg in "$@"; do
+	case "$arg" in
+	--no-extensions | -ne)
+		echo "pa-auto: $arg would unload the checkpoint gate. Refused." >&2
+		exit 64
+		;;
+	esac
+done
+
+# Tell the gate that nobody is watching. The harness's own ctx.hasUI was
+# observed true in a --print run, so it cannot be the only signal: a prompt
+# would be raised with no one to answer it. This launcher knows, so it says so.
+export CANTUS_UNATTENDED=1
+
+# Recursion depth. Upstream defaults to 1, which lets the root spawn children
+# but stops grandchildren. Raise it for deeper delegation.
+# A global rlmMaxDepth outranks this, and a persisted /rlm-max-depth outranks
+# both, so start a fresh session when you change it.
+if [[ -n "${PA_MAX_DEPTH:-}" ]]; then
+	export RLM_MAX_DEPTH="$PA_MAX_DEPTH"
+fi
+
+# A local provider fails silently when its daemon is stopped or its tunnel has
+# dropped, and the run then spends its budget on failing requests. One HTTP call
+# prevents that. Built-in providers and remote endpoints are skipped.
+if [[ "${PA_PREFLIGHT:-1}" == "1" ]]; then
+	node "$CANTUS_DIR/bin/preflight.js" "$@" || exit 69
+fi
+
+# Token accounting counts input, output and cache writes. The upstream default
+# of 80000 stops a run within a few turns of a large-context model, which is the
+# wrong bound when inference is free. Raise PA_MAX_TOKENS for a local provider
+# and let turns and wall-clock end the run instead.
+exec prime-agent \
+	-e "$GATE" \
+	--autonomous \
+	--autonomous-gate "${PA_GATE:-python3 -m pytest}" \
+	--autonomous-max-turns "${PA_MAX_TURNS:-12}" \
+	--autonomous-max-tokens "${PA_MAX_TOKENS:-80000}" \
+	--autonomous-timeout-ms "${PA_TIMEOUT_MS:-1800000}" \
+	"$@"

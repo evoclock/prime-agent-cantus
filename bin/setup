@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+#
+# One-time setup. Safe to run again; it reports rather than repeats.
+#
+#   ./bin/setup            do it
+#   ./bin/setup --check    report only, change nothing
+
+set -euo pipefail
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BIN="${PA_LINK_DIR:-$HOME/.local/bin}"
+CHECK=0
+[[ "${1:-}" == "--check" ]] && CHECK=1
+
+ok() { printf '  \033[32m✔\033[0m %s\n' "$1"; }
+no() { printf '  \033[31m✖\033[0m %s\n' "$1"; }
+info() { printf '  \033[33m·\033[0m %s\n' "$1"; }
+
+echo
+echo "prime-agent-cantus setup"
+echo "  repo: $REPO"
+echo
+
+# 1. Prime Agent itself.
+echo "Prime Agent"
+if command -v prime-agent >/dev/null 2>&1; then
+	# Ask the command, rather than guessing an install prefix: Homebrew, nvm and
+	# a distribution npm all put the package somewhere different. Note the
+	# 2>&1: prime-agent prints its version on stderr, so discarding stderr
+	# silently yields an empty string rather than an error.
+	version="$(prime-agent --version 2>&1 | tr -d '\r' | head -1 || true)"
+	ok "installed${version:+ (version $version)}"
+else
+	no "not found on PATH. Install it first: https://github.com/PrimeIntellect-ai/prime-agent/releases/latest"
+	exit 69
+fi
+
+# Auto-update is on unless the environment says otherwise. This is a decision,
+# not a default to inherit, so it is reported rather than changed.
+if [[ -n "${PI_SKIP_VERSION_CHECK:-}${PI_OFFLINE:-}" ]]; then
+	ok "version pinned (PI_SKIP_VERSION_CHECK or PI_OFFLINE is set)"
+else
+	info "self-update is ON. To pin: echo 'export PI_SKIP_VERSION_CHECK=1' >> ~/.bashrc"
+fi
+echo
+
+# 2. Launchers on PATH.
+echo "Launchers"
+if [[ $CHECK -eq 0 ]]; then
+	mkdir -p "$BIN"
+	ln -sf "$REPO/bin/pa" "$BIN/pa"
+	ln -sf "$REPO/bin/pa-auto" "$BIN/pa-auto"
+fi
+for cmd in pa pa-auto; do
+	if [[ -L "$BIN/$cmd" ]]; then
+		ok "$BIN/$cmd"
+	else
+		no "$BIN/$cmd is missing"
+	fi
+done
+case ":$PATH:" in
+*":$BIN:"*) ok "$BIN is on PATH" ;;
+*) no "$BIN is NOT on PATH. Add: export PATH=\"$BIN:\$PATH\"" ;;
+esac
+echo
+
+# 3. Rules.
+echo "Policy rules"
+if node --test "$REPO"/test/*.test.js >/dev/null 2>&1; then
+	ok "all tests pass"
+else
+	no "tests fail; run: node --test 'test/*.test.js'"
+fi
+echo
+
+# 4. Model endpoints.
+echo "Model endpoints"
+node "$REPO/bin/preflight.js" --list 2>&1 | tail -n +2 || true
+echo
+
+echo "Next"
+echo "  pa           supervised; the gate asks before a risky action"
+echo "  pa-auto      unattended; the agent drives behind a quality gate"
+echo "  prime-agent  upstream, ungoverned"
+echo
