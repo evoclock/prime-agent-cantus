@@ -3,7 +3,8 @@
 Two launch profiles for [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent),
 so that autonomous and interactive work happen in the same harness.
 
-## Why
+<details open>
+<summary><strong>Why</strong></summary>
 
 Almost every harness ships an autonomous mode now. Prime Agent is interesting
 because of how it is built rather than because it has one.
@@ -63,7 +64,10 @@ runs inline, inside the harness, where neither a container boundary nor an
 orchestrator is watching. This brings those patterns into Prime Agent without
 touching what Prime Agent is for.
 
-## What makes that safe enough
+</details>
+
+<details>
+<summary><strong>What makes that safe enough</strong></summary>
 
 A checkpoint sits in front of every tool call.
 
@@ -90,7 +94,10 @@ almost nothing.
 
 Prime Agent is not modified. Everything here loads at run time.
 
-## Does it actually hold?
+</details>
+
+<details open>
+<summary><strong>Does it actually hold?</strong></summary>
 
 Rules like these are easy to assert and easy to get wrong, so they are measured
 against a corpus of real tasks rather than argued about. Each task runs
@@ -112,7 +119,10 @@ commands split across two calls to hide from a single-call check.
 The false-positive count matters as much as the false-negative one. A gate that
 interrupts ordinary work is a gate that gets turned off.
 
-## Requirements
+</details>
+
+<details>
+<summary><strong>Requirements</strong></summary>
 
 - Prime Agent installed and on the PATH. Audited against 0.7.0.
 - Node 22.8 or newer, which Prime Agent already requires.
@@ -121,7 +131,10 @@ interrupts ordinary work is a gate that gets turned off.
 No dependencies are installed. The gate and its tests use only the Node
 standard library.
 
-## Install
+</details>
+
+<details>
+<summary><strong>Install</strong></summary>
 
 Clone the repository and run the setup script. It links the launchers, runs the
 tests, and reports what your model endpoints are serving.
@@ -150,7 +163,10 @@ including bare `prime-agent`, register the directory in
 That file is not in version control, so an absolute path is safe there. Never
 put one in a committed file.
 
-## Register a local model provider
+</details>
+
+<details>
+<summary><strong>Register a local model provider</strong></summary>
 
 Prime Agent only sees providers listed in `~/.prime/agent/models.json`. A live
 endpoint that is not registered is invisible to it, and no child session can
@@ -215,7 +231,10 @@ full field list, including `thinkingLevelMap` and `modelOverrides`.
 
 If a server needs handling this shape does not cover, raise it as a request.
 
-## Use
+</details>
+
+<details>
+<summary><strong>Use</strong></summary>
 
 All arguments pass through to Prime Agent.
 
@@ -243,7 +262,10 @@ default of 80000 stops a run within a few turns of a large-context model, which
 is the wrong bound when inference is free. Raise `PA_MAX_TOKENS` for a local
 provider and let `PA_MAX_TURNS` and `PA_TIMEOUT_MS` end the run instead.
 
-## Preflight
+</details>
+
+<details>
+<summary><strong>Preflight</strong></summary>
 
 `pa-auto` probes every locally served provider in `models.json` before it starts.
 A stopped daemon or a dropped tunnel otherwise spends the autonomous budget on
@@ -266,7 +288,10 @@ Local model endpoints:
 `PA_PREFLIGHT_PROVIDERS`, or the provider the run will use, are required, so
 an unrelated endpoint being down does not block the run.
 
-## Mixed-model panels
+</details>
+
+<details>
+<summary><strong>Mixed-model panels</strong></summary>
 
 A child may run on a different model from its parent:
 
@@ -283,7 +308,10 @@ falling back. Results return through `agent_message`, never as a return value.
 A provider must be registered in `models.json` before any child can use it.
 A live endpoint that is not registered is invisible to Prime Agent.
 
-## Screening what comes back
+</details>
+
+<details>
+<summary><strong>Screening what comes back</strong></summary>
 
 The gate inspects calls going out. It also screens results coming back, because
 blocking a write to a credentials file while permitting the read is backwards:
@@ -330,7 +358,10 @@ It is also not a guarantee. Patterns catch known shapes; a secret that reads
 like prose passes through. Treat it as the last cheap filter before content
 reaches a third party, not as permission to send anything anywhere.
 
-## Known limits
+</details>
+
+<details>
+<summary><strong>Known limits</strong></summary>
 
 A block stops the call before it runs. That is enforcement, but it is not
 containment, and the difference matters.
@@ -347,7 +378,10 @@ containment, and the difference matters.
 The containment boundary stays outside the harness: git hooks, filesystem
 permissions and container mounts.
 
-## Tests
+</details>
+
+<details>
+<summary><strong>Tests</strong></summary>
 
 ```bash
 npm test        # or: node --test 'test/*.test.js'
@@ -356,7 +390,10 @@ npm test        # or: node --test 'test/*.test.js'
 No dependencies. `lib/policy.js` imports nothing, so the rules are testable
 without Prime Agent installed.
 
-## Why this is not a fork
+</details>
+
+<details>
+<summary><strong>Why this is not a fork</strong></summary>
 
 Forking is the usual way to extend a tool, and Prime Agent is itself a fork of
 [pi-mono](https://github.com/badlogic/pi-mono). The reason not to fork here is
@@ -391,7 +428,10 @@ and the rules and their tests are untouched.
 
 In either case the policy code ports across unchanged.
 
-## Tracking upstream updates
+</details>
+
+<details>
+<summary><strong>Tracking upstream updates</strong></summary>
 
 Prime Agent checks for updates at startup and can install a newer release on
 its own. Nothing here changes that, so it is worth deciding which you want.
@@ -482,3 +522,5 @@ version.
 > ancestor of Prime Agent under its former name, it provides its own `pi`
 > command, and it is independent of these launchers. Leave it alone unless you
 > have established that nothing on your machine calls it.
+
+</details>
